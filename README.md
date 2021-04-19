@@ -32,7 +32,7 @@ Support classes include:
 * **MOSZ**          :: Encapsulate common operations for script development and shell interaction.
 
 
-Find demos in [demos/](https://github.com/davidreeder/Python-MOSToolkit/demos/).
+Find demos in [demos/](https://github.com/davidreeder/Python-MOSToolkit/tree/main/demos/).
 
 
 
@@ -68,13 +68,12 @@ clients and servers.
 * Managing server control via OSC
 
 
-See [demos/MOSOSC](https://github.com/davidreeder/Python-MOSToolkit/demos/MOSOSC), class headers and pydoc for more details.
+See [demos/MOSOSC](https://github.com/davidreeder/Python-MOSToolkit/tree/main/demos/MOSOSC/), class headers and pydoc for more details.
 
 
 
 
 ## VERSION HISTORY
-
 
 v0.5 -- April 2021
 > Initial release.
