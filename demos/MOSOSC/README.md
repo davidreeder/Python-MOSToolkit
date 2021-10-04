@@ -4,7 +4,7 @@
 
 Include path to `Python-MOSToolkit/classes/` directory in `PYTHONPATH`.  MOSToolKit assumes Python v3.
 
-Run OSCServer and OSCClient in two separate windows:
+Run OSCServer and OSCClient:
 
     First:
       $ ./OSCServer.py  2>/dev/null
