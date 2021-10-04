@@ -1,6 +1,6 @@
 #                                                                        -o--
 """
-    MOSLog.py
+    MOSLog.py   (class)
 
     Log messages at different log levels in context of <class>.<method>.
     Use inspect to find class, module, function or script names.
@@ -30,7 +30,7 @@
 #     (See ./LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 #---------------------------------------------------------------------
 
-version  :str  = "0.5"   #RELEASE
+version  :str  = "0.6"   #RELEASE
 
 USAGE  :str  = "[logTime:bool], [logDate:bool]"   
 
@@ -44,13 +44,13 @@ import inspect
 # NB  Relative to logging module lowest level DEBUG=10.
 #
 import logging
-logging.MOS_LOGGER_LEVEL_MARK  = 11   # DEBUG=10
-logging.MOS_LOGGER_LEVEL_OSC   = 21   # INFO=20
+logging.MOS_LOGGER_LEVEL_MARK      = 11   # DEBUG=10
+logging.MOS_LOGGER_LEVEL_MESSAGE   = 21   # INFO=20
+logging.MOS_LOGGER_LEVEL_OSC       = 22
 
 import os
 import sys
 
-import typing
 from typing import Any, List, Tuple
 
 
@@ -65,10 +65,11 @@ class  MOSLog:
 
     Log messages that stream to stdout--
         info()
+        message()       (introduced by MOS)
+        osc()           (introduced by MOS)
         warning()
         error()
         critical()
-        osc()           (introduced by MOS)
 
 
     All logging methods take a variable number of arguments,
@@ -92,17 +93,22 @@ class  MOSLog:
     # Public methods.
 
     #                                                                    -o-
-    def  osc(self, *args)  -> None:
-        s = " ".join(str(x) for x in args)
-        logging.log(logging.MOS_LOGGER_LEVEL_OSC, s)
-
-    #                                                                    -o-
     def  mark(self, *args)  -> None:                          
         logging.log( logging.MOS_LOGGER_LEVEL_MARK,                \
                      "%s %s",                                      \
                         self._makeSignature(inspect.stack()[1]),   \
                         self._processArguments(args)               \
                    )
+
+    #                                                                    -o-
+    def  message(self, *args)  -> None:
+        logging.log( logging.MOS_LOGGER_LEVEL_MESSAGE, 
+                     self._processArguments(args, isMessage=True) )
+
+    #                                                                    -o-
+    def  osc(self, *args)  -> None:
+        s = " ".join(str(x) for x in args)
+        logging.log(logging.MOS_LOGGER_LEVEL_OSC, s)
 
 
     #                                                                    -o-
@@ -142,7 +148,7 @@ class  MOSLog:
         if  exitValue:
             print( f"\n{self.scriptName()}: {self._makeSignature(stack)} -- Exiting...  ({exitValue})",
                    file=sys.stderr )
-            exit(exitValue)
+            sys.exit(exitValue)
 
 
 
@@ -160,7 +166,7 @@ class  MOSLog:
         frameDepth = 1 + additionalFrameDepth
 
         try:
-            return  sys._getframe(frameDepth).f_locals["self"].__class__.__name__
+            return  sys._getframe(frameDepth).f_locals["self"].__class__.__name__    #XXX
         except:
             return  ""
 
@@ -241,13 +247,15 @@ class  MOSLog:
 
         if  not (isinstance(logTime, bool)  and  isinstance(logDate, bool)):
             print(usage, file=sys.stderr)
-            exit(1)
+            sys.exit(1)
             return
 
 
         #
-        logging.addLevelName(logging.MOS_LOGGER_LEVEL_OSC,  "OSC") 
-        logging.addLevelName(logging.MOS_LOGGER_LEVEL_MARK, "MARK") 
+        logging.addLevelName(logging.MOS_LOGGER_LEVEL_MARK,     "MARK"  ) 
+
+        logging.addLevelName(logging.MOS_LOGGER_LEVEL_MESSAGE,  ""      ) 
+        logging.addLevelName(logging.MOS_LOGGER_LEVEL_OSC,      "OSC"   ) 
 
 
         #
@@ -263,18 +271,26 @@ class  MOSLog:
             logFormatWithTime  = "%(asctime)s  "
             dateFormat  = "%Y-%m-%d"
 
-        logFormatWithTime += "%(levelname)s  %(message)s"
+        #logFormatWithTime += "%(levelname)s  %(message)s"
+        logFormatWithTime += "%(levelname)s  %(message)s\r"
             
 
         #
         class  StderrFilter(logging.Filter):
             def  filter(record):
-                return  record.levelno in ( logging.DEBUG, logging.MOS_LOGGER_LEVEL_MARK )
+                return  record.levelno in ( logging.DEBUG, 
+                                            logging.MOS_LOGGER_LEVEL_MARK 
+                                          )
 
         class  StdoutFilter(logging.Filter):
             def  filter(record):
-                return  record.levelno in ( logging.INFO, logging.MOS_LOGGER_LEVEL_OSC, 
-                                            logging.WARNING, logging.ERROR, logging.CRITICAL )
+                return  record.levelno in ( logging.INFO, 
+                                            logging.MOS_LOGGER_LEVEL_MESSAGE, 
+                                            logging.MOS_LOGGER_LEVEL_OSC, 
+                                            logging.WARNING, 
+                                            logging.ERROR, 
+                                            logging.CRITICAL 
+                                          )
 
         stderrHandler = logging.StreamHandler(outputStreamBelowInfo)
         stderrHandler.setLevel(logging.DEBUG)
@@ -324,16 +340,19 @@ class  MOSLog:
 
 
     #                                                                    -o-
-    def  _processArguments(self, argsList:Tuple[Any])  -> str:
-        argsList = list(argsList)
+    def  _processArguments(self, argsList:Tuple[Any], isMessage:bool=False)  -> str:
+        argsList      :list  = list(argsList)
+        formatString  :str   = "-- "
 
         if len(argsList) <= 0:
             return  ""
 
-        formatString = "-- " + str(argsList.pop(0))
+        if  isMessage:  formatString = ""
+
+        formatString += str(argsList.pop(0))
 
         if len(argsList) <= 0:
-            return(formatString)
+            return  formatString
 
         return  (formatString % tuple(argsList))
 

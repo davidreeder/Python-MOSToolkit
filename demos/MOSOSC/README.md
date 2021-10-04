@@ -1,7 +1,8 @@
 
 ## MOSOSC Demo
 
-Include `Python-MOSToolkit/classes/` directory in `PYTHONPATH`.
+
+Include path to `Python-MOSToolkit/classes/` directory in `PYTHONPATH`.  MOSToolKit assumes Python v3.
 
 Run OSCServer and OSCClient in two separate windows:
 
@@ -12,7 +13,7 @@ Run OSCServer and OSCClient in two separate windows:
       $ ./OSCClient.py
 
 
-Run/edit cycle through both OSCClient.py and OSCServer.py to exercise different class features.
+Review comments in both OSCClient.py and OSCServer.py for additional examples of class features.
 
 
 See [MOSOSC.py](https://github.com/davidreeder/Python-MOSToolkit/blob/main/classes/MOSOSC.py) class header and "pydoc MOSOSC" for further details.

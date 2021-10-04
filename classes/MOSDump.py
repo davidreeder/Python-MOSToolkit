@@ -1,6 +1,6 @@
 #                                                                        -o--
 """
-    MOSDump.py 
+    MOSDump.py   (module)
 
     Dump things (initially) as strings.
 
@@ -23,8 +23,8 @@
 
     ENVIRONMENT--
         env()
-        selectVars(), sv() 
-            selectVarsp(), svp()
+        selectVars()       (sv)
+            selectVarsp()  (svp)
 
 
     See module and function headers or pydoc for more details.
@@ -36,7 +36,7 @@
 #     (See ./LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 #---------------------------------------------------------------------
 
-version  :str  = "0.5"   #RELEASE
+version  :str  = "0.6"   #RELEASE
 
 
 
@@ -102,7 +102,7 @@ def  dicto(  dictionary:dict,
         or  not isinstance(indent, str)        \
         or  not isinstance(sort, bool):
         z.postDefUsage(log.defName(), USAGE)
-        return
+        return  ""
 
     if  len(title) > 0:  title += " = "
 
@@ -150,7 +150,7 @@ def  dicto(  dictionary:dict,
 def  dictop(  dictionary:dict, 
               title:str=None, indent:str=None, sort:bool=False, 
               depth:int=1 
-           )  -> str:   #PRINT dicto()
+           )  -> str:   #PRINT 
     print(dicto(dictionary, title, indent, sort, depth))   
 
 
@@ -183,7 +183,7 @@ def  listo(  aList:list,
               and  isinstance(title, str)  
               and  isinstance(indent, str) ):
         z.postDefUsage(log.defName(), USAGE)
-        return
+        return  ""
 
     if  len(title) > 0:  title += " = "
 
@@ -235,7 +235,7 @@ def  listo(  aList:list,
 def  listop(  aList:list, 
               title:str=None, indent:str=None, sort:bool=False,
               depth:int=1
-           )  -> str:   #PRINT listo()
+           )  -> str:   #PRINT 
     print(listo(aList, title, indent, sort, depth))
 
 
@@ -308,6 +308,8 @@ def  obj(thing:object=None)  -> Union[str,None]:
 
     else:
         log.error(f"UNKNOWN object type.  ({thing})")
+
+    return  None
 
 
 def  objp(thing=None)  -> Union[str,None]:              #PRINT
@@ -574,7 +576,8 @@ def  env(globalsOrLocals:dict=None)  -> None:
 #                                                                    -o-
 def  selectVars(  contextDict   :dict       = None, 
                   variableList  :List[str]  = [], 
-                  title:str=None, indent:str=None, sort:bool=False)  -> None:
+                  title:str=None, indent:str=None, sort:bool=False, depth:int=2
+               )  -> str:
     """
     Dump a selection of key/value pairs from contextDict.
     String elements of variableList select keys from contextDict.  
@@ -596,7 +599,7 @@ def  selectVars(  contextDict   :dict       = None,
     #
     if  not isinstance(contextDict, dict):
         z.postDefUsage(log.defName(), USAGE)
-        return
+        return  ""
 
 
     #
@@ -621,25 +624,17 @@ def  selectVars(  contextDict   :dict       = None,
                 newDict[v] = eval(f"contextDict[baseToken]{tokenModifier}")
 
     #
-    return  dicto(newDict, title, indent, sort)
+    return  dicto(newDict, title, indent, sort, depth=depth)
 
-
-def  sv(  contextDict   :dict       = None,                  
-          variableList  :List[str]  = [], 
-          title:str=None, indent:str=None, sort:bool=False)  -> None:           #ALIAS
-    return  selectVars(contextDict, variableList, title, indent, sort)
-
+sv = selectVars   #ALIAS
 
 
 #                                                                    -o-
 def  selectVarsp(  contextDict   :dict       = None,         
                    variableList  :List[str]  = [], 
-                   title:str=None, indent:str=None, sort:bool=False)  -> None:   #PRINT 
-    return  print(selectVars(contextDict, variableList, title, indent, sort))
+                   title:str=None, indent:str=None, sort:bool=False, depth:int=2,
+                )  -> str:   #PRINT 
+    return  print(selectVars(contextDict, variableList, title, indent, sort, depth=depth))
 
-def  svp(  contextDict   :dict       = None,        
-           variableList  :List[str]  = [], 
-           title:str=None, indent:str=None, sort:bool=False)  -> None:
-    return  print(selectVars(contextDict, variableList, title, indent, sort))   #ALIAS PRINT
-
+svp = selectVarsp   #ALIAS
 

@@ -1,6 +1,6 @@
 #                                                                        -o--
 """
-    MOSZ.py
+    MOSZ.py   (module)
 
     Kitchen sink from A to Z, methods and classes.
     Put everything here that cannot make for its own class.
@@ -11,27 +11,29 @@
         pyrc()
         pymos()
 
-        history(), h()
-        clearScreen(), c()
+        history()      (h)
+        clearScreen()  (c)
 
-        viewScript(), vs()
-        readScript(), rs()
+        viewScript()   (vs)
+        readScript()   (rs)
 
         isInteractive()
 
     DIAGNOSTICS--
         postAndExit()
         postStderr()
+        postCRToContinue()
         
         postDefUsage()
         postScriptUsage()
 
-        headerMark(), hm()
+        headerMark()  (hm)
 
     USER INTERACTION--
         getKeyboardInput()
         yesno()
         pager()
+        readOneCharacter()
 
     SCRIPT MANAGEMENT--
         parseCommandlineArguments()
@@ -39,9 +41,10 @@
 
     OTHER STUFF--
         isNumber()
-        collectionToString(), c2s()
+        collectionToString()  (c2s)
         addScriptSuffix()
         timeNowInSeconds()
+        percentTrue()
 
 
     See module and function headers or pydoc for more details.
@@ -52,8 +55,12 @@
 #     Distributed under the Boost Software License, Version 1.0.
 #     (See ./LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 #---------------------------------------------------------------------
+#
+# TBD--
+#   . clarify types of all local variables
+# 
 
-version  :str  = "0.5"   #RELEASE
+version  :str  = "0.6"   #RELEASE
 
 
 
@@ -64,10 +71,12 @@ import argparse
 import collections
 from datetime import datetime
 import os
+import random
 import readline
 import signal
 import sys
 import tempfile
+import tty, termios
 
 from typing import List, Union
 
@@ -120,15 +129,14 @@ def  history(noPager:bool=False)  -> None:
     pager(s, doEnumerate=True, seekToBottom=True, noPager=noPager)
 
 
-def  h(noPager:bool=False)   -> None:  #ALIAS
-    history(noPager)
+h = history   #ALIAS
 
 
 #                                                                    -o-
 def  clearScreen()  -> None:
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def  c()  -> None:  clearScreen()   #ALIAS
+c = clearScreen   #ALIAS
 
 
 
@@ -140,17 +148,15 @@ def  viewScript(scriptName:str=None, addSuffix:bool=True, scriptSuffix:str="py")
     try:                    pager(open(scriptName).read())
     except Exception as e:  log.error(e)
 
-
-def  vs(scriptName:str=None, addSuffix:bool=True, scriptSuffix:str="py")  -> None:   #ALIAS
-    viewScript(scriptName, addSuffix, scriptSuffix)
+vs = viewScript   #ALIAS
 
 
 #                                                                    -o-
 # NB  Use exec() to execute and capture context in globals().
 #
-def  readScript(  scriptName:str=None, 
-                  addSuffix:bool=True, 
-                  scriptSuffix:str="py"
+def  readScript(  scriptName    :str    = None, 
+                  addSuffix     :bool   = True, 
+                  scriptSuffix  :str    = "py"
                 ) -> str:
     scriptContent  :str  = None
 
@@ -161,9 +167,7 @@ def  readScript(  scriptName:str=None,
 
     return  scriptContent
 
-
-def  rs(scriptName:str=None, addSuffix:bool=True, scriptSuffix:str="py")  -> str:   #ALIAS
-    return  readScript(scriptName, addSuffix, scriptSuffix)
+rs = readScript   #ALIAS
 
 
 
@@ -185,7 +189,7 @@ def  postAndExit(message:str, exitValue:int=1, omitScriptName:bool=False)  -> in
     postStderr(f"{scriptName}{message}")
 
     if  not isInteractive():
-        exit(exitValue)
+        sys.exit(exitValue)
 
     return  exitValue
 
@@ -194,6 +198,15 @@ def  postAndExit(message:str, exitValue:int=1, omitScriptName:bool=False)  -> in
 def  postStderr(message:str)  -> None:
     print(message, file=sys.stderr)
 
+
+#                                                                    -o-
+def  postCRToContinue(message:str=None)  -> None:
+    s  :str  = "<CR> to continue..."
+
+    if  message:  s = message
+
+    print(s.strip() + "   ", end="", flush=True)
+    input()
 
 
 #                                                                    -o-
@@ -233,8 +246,7 @@ def  headerMark(title:str=None, short:bool=None)  -> None:
 
     return s
 
-def  hm(title:str=None, short:bool=None)  -> None:   #ALIAS
-    print(headerMark(title, short))
+hm = headerMark
 
 
 
@@ -274,7 +286,7 @@ def  getKeyboardInput(  prompt               :str   = None,
               and  not isinstance(validationFunction, collections.Callable) )   \
         or  not isinstance(leadWithPrompt, bool):
         postDefUsage(log.defName(), USAGE)
-        return
+        return  None
 
 
     #
@@ -302,12 +314,12 @@ def  getKeyboardInput(  prompt               :str   = None,
 
 
 #                                                                    -o-
-def  yesno( prompt:str=None,            \
-            expectedInput:str=None,     \
-            leadWithPrompt:bool=None    \
-          )                            -> Union[bool, None]:   
+def  yesno(  prompt:str=None,           
+             expectedInput:str=None,   
+             leadWithPrompt:bool=None 
+           ) -> Union[bool, None]:   
     """
-    RETURN:  bool  if choice matches expectedInput;
+    RETURN:  bool  True if choice matches expectedInput, False otherwise.
              None  if user cancels with ^C.
     """
 
@@ -330,13 +342,13 @@ def  yesno( prompt:str=None,            \
               and  isinstance(expectedInput, str)  
               and  isinstance(leadWithPrompt, bool) ):
         postDefUsage(log.defName(), USAGE)
-        return
+        return  None
 
     expectedInput = expectedInput.lower()[0]
 
-    if  ("y" != expectedInput)  and  ("n" != expectedInput):
+    if  expectedInput not in ("y", "n"):
         postAndExit(f"{log.defName()}: <expectedInput> must lead with 'y' or 'n'.")
-        return
+        return  None
 
 
     #
@@ -362,7 +374,7 @@ def  yesno( prompt:str=None,            \
 
         charInput = charInput.lower()[0]
 
-        if  ("y" != charInput)  and  ("n" != charInput):
+        if  charInput not in ("y", "n"):
             print(promptIndentation + "  Please answer 'y' or 'n'.")
             return  False
         else:
@@ -441,13 +453,31 @@ def  pager(     fileOrStr               = None,         \
 #ENDDEF -- pager()
 
 
+#                                               -o-
+def  readOneCharacter()  -> str:
+    """
+    Read one character from the keyboard and return it immediately.
+    """
+    fd            :int   = sys.stdin.fileno()
+    fdTCPrevious  :list  = termios.tcgetattr(fd)
+    ch            :str   = None
+
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, fdTCPrevious)
+
+    return  ch
+
+
 
 
 #----------------------------------------------- -o--
 # Script management.
 
 #                                                                    -o-
-def  parseCommandlineArguments(listOfDictOfArgs:List[dict]=None)  -> argparse.Namespace:
+def  parseCommandlineArguments(listOfDictOfArgs:List[dict]=None)  -> Union[argparse.Namespace, None]:
     """
     Shortcut for simple use of argparse.
     Supports only optional_strings, default, type, help.
@@ -455,7 +485,7 @@ def  parseCommandlineArguments(listOfDictOfArgs:List[dict]=None)  -> argparse.Na
 
     if  not listOfDictOfArgs  or  len(listOfDictOfArgs) <= 0:
         postAndExit("listOfDictOfArgs CANNOT be empty.", log.defName())
-        return
+        return  None
         
     #
     parser = argparse.ArgumentParser()
@@ -465,7 +495,7 @@ def  parseCommandlineArguments(listOfDictOfArgs:List[dict]=None)  -> argparse.Na
             postAndExit(                                               
                 "listOfDictOfArgs entries MUST CONTAIN 'option_strings'.", 
                 log.defName() )
-            return
+            return  None
 
         parser.add_argument(
                            e["option_strings"],
@@ -504,11 +534,10 @@ if  not isInteractive():   #XXX  Also affects interactive shell.
 # Other stuff.
 
 #                                                                    -o-
-def  isNumber(numberString)  -> bool:
-    try:     int(numberString)
-    except:  return  False
-
-    return  True
+def  isNumber(obj:object)  -> bool:
+    if  isinstance(obj, (int, float)):
+        return  True
+    return  False
 
 
 #                                                                    -o-
@@ -518,9 +547,7 @@ def  collectionToString(someCollection=None, separator:str=" ")  -> str:
 
     return  separator.join(map(str, someCollection))
 
-
-def  c2s(someCollection=None, separator:str=" ")  -> str:   #ALIAS
-    return  collectionToString(someCollection, separator)
+c2s = collectionToString   #ALIAS
 
 
 #                                                                    -o-
@@ -549,5 +576,10 @@ def  timeNowInSeconds(withOffset:float=0.0, useUTC:bool=False)  -> float:
         dt = datetime.now()
 
     return  dt.timestamp() + withOffset
+
+
+#                                                                    -o-
+def  percentTrue(lessThanOrEqualTo:float)  -> bool:
+    return  ((random.random() * 100) <= lessThanOrEqualTo)
 
 

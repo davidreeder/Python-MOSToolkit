@@ -1,6 +1,6 @@
 #                                                                        -o--
 """
-    MOSClass.py
+    MOSClass.py  (classes)
 
     Helpful classes.
 
@@ -15,7 +15,7 @@
 #     (See ./LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 #---------------------------------------------------------------------
 
-version  :str  = "0.2"   #RELEASE
+version  :str  = "0.3"   #RELEASE
 
 
 
@@ -28,17 +28,16 @@ from enum import Enum
 
 
 #----------------------------------------- -o--
-# Classes.
+# Enum classes.
 
+#                                               -o-
 class  StringEnum(Enum):
     """
-    Use StringEnum to define an Enum class whose attributes have string values.
+    Enum class whose attributes have string values.
     """
 
     def  __repr__(self):
         return  '<%s.%s>' % (self.__class__.__name__, self.name)
 
-#ENDCLASS -- StringEnum()
-
-
+#ENDCLASS -- StringEnum
 

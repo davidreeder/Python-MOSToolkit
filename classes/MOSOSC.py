@@ -1,8 +1,9 @@
 #                                                                        -o--
 """
-    MOSOSC.py
+    MOSOSC.py   (class)
 
-    Wrapper for https://pypi.org/project/python-osc .
+    Wrapper for https://pypi.org/project/python-osc, version 1.8.0.
+      Backwards compatible to (at least), version 1.7.4.
 
     Provides control over creation and management of...
         * OSC client and server
@@ -30,7 +31,7 @@
 #     (See ./LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 #---------------------------------------------------------------------
 
-version  :str  = "0.1"   #RELEASE
+version  :str  = "0.2"   #RELEASE
 
 USAGE  :str  = "[hostname:str], [port:int]"   
 
@@ -39,6 +40,11 @@ USAGE  :str  = "[hostname:str], [port:int]"
 #----------------------------------------- -o--
 # Modules.
 
+from typing import Any, List, Tuple, Union
+from types import FunctionType
+
+
+#
 from pythonosc import udp_client
 
 from pythonosc import osc_server
@@ -48,10 +54,6 @@ from pythonosc.osc_message_builder import OscMessageBuilder
 from pythonosc.osc_bundle_builder import OscBundleBuilder
 from pythonosc import osc_message 
 from pythonosc import osc_bundle 
-
-from typing import Any, List, Tuple, Union
-
-from types import FunctionType
 
 
 #
@@ -252,7 +254,7 @@ class  MOSOSC:
         #
         enableBroadcastString = ""
         if  enableBroadcast:
-            enableBroadcastString = f"  Broadcast IS ENABLED."
+            enableBroadcastString = "  Broadcast IS ENABLED."
 
         log.info(f"Created client to {self.hostname}:{self.port}.{enableBroadcastString}")
 
@@ -274,6 +276,9 @@ class  MOSOSC:
                    *messageArgs    :Tuple[Any],
                    sendMessageNow  :bool        = False,
                 )  -> OscMessageBuilder:
+        """
+        NB  Removes instances of None from messageArgs.
+        """
 
         self._validateClientSetup()
         self._validateOSCPath(oscPath)
@@ -282,8 +287,8 @@ class  MOSOSC:
         messageBuilder = OscMessageBuilder(oscPath)
 
         for arg in messageArgs:
-            if  arg:  
-                messageBuilder.add_arg(arg)
+            if  None is arg:  continue 
+            messageBuilder.add_arg(arg)
 
         if  sendMessageNow:
             self.send(messageBuilder)
@@ -297,6 +302,9 @@ class  MOSOSC:
                       messageBuilder  :OscMessageBuilder,
                       *messageArgs    :Tuple[Any],
                    )  -> OscMessageBuilder:
+        """
+        NB  Removes instances of None from messageArgs.
+        """
 
         self._validateClientSetup()
 
@@ -304,15 +312,17 @@ class  MOSOSC:
             or  (len(messageArgs) <= 0):
             log.critical("One or more input ARGUMENTS ARE INVALID.")
 
+        #
         for arg in messageArgs:
+            if  None is arg:  continue 
             messageBuilder.add_arg(arg)
 
         return  messageBuilder
 
 
     #                                                                    -o-
-    def  messageSend(self, oscPath:str, messageArgs:Tuple[Any]=None)  -> OscMessageBuilder:
-        return  self.message(oscPath, messageArgs, sendMessageNow=True)
+    def  messageSend(self, oscPath:str, *messageArgs:Tuple[Any])  -> OscMessageBuilder:
+        return  self.message(oscPath, *messageArgs, sendMessageNow=True)
 
 
 
@@ -347,7 +357,7 @@ class  MOSOSC:
 
         if  sendBundleNow:
             if len(bundleArgs) <= 0:   # XXX  Never reached.
-                log.critical(f"Cannot send BUNDLE WITH NO CONTENT.")
+                log.critical("Cannot send BUNDLE WITH NO CONTENT.")
             self.send(bundleBuilder)
 
         #
@@ -441,7 +451,6 @@ class  MOSOSC:
                         postOSC(_, bundleOrMessage._timestamp)
                     else:
                         findMessageInBundle(_, _._timestamp)
-            return
                     
         #ENDDEF -- findMessageInBundle()
 
@@ -613,9 +622,9 @@ class  MOSOSC:
         if  self._isServerRunning:
             self._server.shutdown()
             self._isServerRunning = False
-            log.info("...Server STOPPED at %s:%s." % (self.hostname, self.port))
+            log.info("...Server at %s:%s is STOPPED." % (self.hostname, self.port))
         else:
-            log.info("Server is ALREADY STOPPED at %s:%s." % (self.hostname, self.port))
+            log.info("Server at %s:%s is ALREADY STOPPED." % (self.hostname, self.port))
 
 
 
@@ -766,6 +775,10 @@ class  MOSOSC:
     #                                                                    -o-
     # NB  First argument represents working instance of this class, 
     #       passed in by calling environment.
+    #
+    # Q  Impossible to get same result by passing default handler into
+    #      class?  Handlers fail to recognize postSourceAddr, and lose further
+    #      information when postSourceAddr is not enabled.
     #
     def  _pathHandlerDefault(  mososc,
                                *eventArgs  :Tuple[Any]
