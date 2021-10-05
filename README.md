@@ -108,9 +108,9 @@ See also...
 ## Version History
 
 
-v0.6 -- October 2021  (MOSRTcmix)
+v0.6 -- October 2021  (RTcmix)
 > Enhance RTcmix scores with **cmix/cmixHelper.sco** and **MOSRTcmix** module.
 
-v0.5 -- April 2021  (MOSOSC)
+v0.5 -- April 2021  (OSC)
 > Initial release.
 
