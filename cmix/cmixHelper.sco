@@ -3,7 +3,7 @@
 //
 // Helper functions and data structures.  
 // Test cases and examples.
-// Intended as an include file.  Use only once.
+// Designed as an include file.
 //
 // Includes subsystems for...
 //     * Receiving OSC data from Python.
@@ -57,17 +57,21 @@
 //     getDiskMemory()
 //     testDiskMemory()
 // 
+// 
 //
 // ASSUME  system() invokes bash.
 //
+// NB
+//   * Envelopes used in p-fields scale to length of duration.
 //
-//---------------------------------------------------------------------
-//     Copyright (C) David Reeder 2021.  rtcmix@mobilesound.org
+//
+//--------------------------------------------------------------------
+//     Copyright (C) David Reeder 2021-2022.  cmix@mobilesound.org
 //     Distributed under the Boost Software License, Version 1.0.
 //     (See ./LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 //---------------------------------------------------------------------
 
-cmixHelper_version = 0.1   //RELEASE
+cmixHelper_version = "0.2"   //RELEASE
 
 
 
@@ -79,6 +83,8 @@ UNDEFINED  = -1.0
 SECONDS_PER_MINUTE  = 60
 
 TEXTHOOK   = "-o" + "-"
+
+cmixBuildEnablesOSC  = true   // Set to true if "CMIX -o" option enables (CMIX-style) OSC input. 
 
 
 
@@ -155,7 +161,7 @@ float  subdivisionPerBeat(float bpm, float subdivisions)  {
 //     If Common List is present, Free List MUST ALSO be present, even if empty.
 //
 // Types available in Free List are a limited common subset of OSC 
-//   and Minc types: float, string, list.  Supports nested lists.
+//   and MinC types: float, string, list.  Supports nested lists.
 //
 
 //---------------------- -o-
@@ -176,9 +182,11 @@ lengthOfOSCDataCommonList = 5
 
 
 //---------------------- -o-
+// Capture incoming MinC list of OSC arguments into a sequence of OSCData structs.
+//
 // NB  Error detection is minimal.  No type checking.
 //     What errors are detected are not easily stopped.
-//     RELY ON CALLING ENVIRONMENT to present well-formed input lists.
+//     RELY ON CALLING ENVIRONMENT (OSC Server) to present well-formed input lists.
 //
 list  parseOSCData(list listOfStructuredLists)  
 {
@@ -308,6 +316,7 @@ list  testOSCData()
 // Disk memory table.
 //
 // A small table to maintain state across score invocations.
+// Enable state across OSC messages when CMIX build does NOT enable OSC.
 // Table data is NEVER NORMALIZED.
 //
 // Read and writes are atomic.
@@ -361,7 +370,11 @@ list  setDiskMemorySingleton(string tableName, float tableLength, list namesPerI
 }
 
 
-// XXX  Treat as SINGLETON.  Only update via functions.
+
+// Always initialize.  
+// DiskMemory feature is always available, but unnecessary when cmixBuildEnablesOSC is true.
+//
+// XXX  Treat DiskMemorySingleton as SINGLETON.  Only update via designated functions.
 //
 struct DiskMemorySingleton  mosDMS   
 
